@@ -18,3 +18,5 @@
 by dr pendejoloco - 2026
 
 **Si esto no funciona, el problema es Gatekeeper **
+
+Autoriza la app: xattr -cr (spaceinvader*.scr) <- pegar desde la ubicación del archivo
