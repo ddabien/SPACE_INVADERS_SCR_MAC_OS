@@ -1,76 +1,78 @@
-import Cocoa
 import ScreenSaver
 import AVKit
 import AVFoundation
 
-@available(macOS 13.0, *)
-class SpaceInvadersScreensaverView: ScreenSaverView {
-    
-    private var playerLayer: AVPlayerLayer!
-    private var player: AVPlayer!
-    private var playerLooper: AVPlayerLooper!
-    
+final class SpaceInvadersScreensaverView: ScreenSaverView {
+
+    private var player: AVPlayer?
+    private var playerLayer: AVPlayerLayer?
+
     override init?(frame: NSRect, isPreview: Bool) {
         super.init(frame: frame, isPreview: isPreview)
-        
-        wantsLayer = true
-        layer?.backgroundColor = NSColor.black.cgColor
-        
         setupVideoPlayer()
     }
-    
+
     required init?(coder: NSCoder) {
         super.init(coder: coder)
+        setupVideoPlayer()
     }
-    
+
     private func setupVideoPlayer() {
-        guard let bundle = Bundle(for: type(of: self)),
-              let videoURL = bundle.url(forResource: "video", withExtension: "mp4") else {
-            NSLog("❌ Video no encontrado")
+
+        // Bundles candidatos (ScreenSaver a veces NO usa Bundle.main)
+        let bundles: [Bundle] = [
+            Bundle(for: type(of: self)),
+            Bundle.main
+        ]
+
+        // Buscar el video.mp4 en Resources
+        let videoURL = bundles
+            .compactMap { $0.url(forResource: "video", withExtension: "mp4") }
+            .first
+
+        guard let videoURL else {
+            NSLog("❌ video.mp4 no encontrado. Bundles probados:")
+            bundles.forEach { NSLog("   • \($0.bundlePath)") }
             return
         }
-        
-        NSLog("✅ Video encontrado: \(videoURL.path)")
-        
-        // Crear player item
+
         let playerItem = AVPlayerItem(url: videoURL)
-        
-        // Crear queue player para loop
-        let queuePlayer = AVQueuePlayer(playerItem: playerItem)
-        player = queuePlayer
-        
+        let player = AVPlayer(playerItem: playerItem)
+        player.isMuted = true
+        player.actionAtItemEnd = .none
+
         // Loop infinito
-        playerLooper = AVPlayerLooper(player: queuePlayer, templateItem: playerItem)
-        
-        // Crear layer
-        playerLayer = AVPlayerLayer(player: player)
-        playerLayer.frame = bounds
-        playerLayer.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
-        playerLayer.videoGravity = .resizeAspect
-        
-        layer?.addSublayer(playerLayer)
-        
-        NSLog("✅ Player configurado")
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(restartVideo),
+            name: .AVPlayerItemDidPlayToEndTime,
+            object: playerItem
+        )
+
+        let layer = AVPlayerLayer(player: player)
+        layer.frame = bounds
+        layer.videoGravity = .resizeAspectFill
+
+        wantsLayer = true
+        self.layer?.addSublayer(layer)
+
+        self.player = player
+        self.playerLayer = layer
+
+        player.play()
     }
-    
-    override func startAnimation() {
-        super.startAnimation()
+
+    @objc private func restartVideo() {
+        player?.seek(to: .zero)
         player?.play()
-        NSLog("▶️ Video reproduciendo")
     }
-    
-    override func stopAnimation() {
-        super.stopAnimation()
-        player?.pause()
-        NSLog("⏸️ Video pausado")
-    }
-    
-    override func layout() {
-        super.layout()
+
+    override func resizeSubviews(withOldSize oldSize: NSSize) {
+        super.resizeSubviews(withOldSize: oldSize)
         playerLayer?.frame = bounds
     }
-    
-    override var hasConfigureSheet: Bool {
-        return false
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 }
