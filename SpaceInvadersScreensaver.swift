@@ -18,35 +18,33 @@ final class SpaceInvadersScreensaverView: ScreenSaverView {
     }
 
     private func setupVideoPlayer() {
-
-        // Bundles candidatos (ScreenSaver a veces NO usa Bundle.main)
-        let bundles: [Bundle] = [
+        // En un .saver, a veces el recurso no aparece en Bundle.main, por eso probamos varios.
+        let bundlesToTry: [Bundle] = [
             Bundle(for: type(of: self)),
             Bundle.main
         ]
 
-        // Buscar el video.mp4 en Resources
-        let videoURL = bundles
+        let videoURL = bundlesToTry
             .compactMap { $0.url(forResource: "video", withExtension: "mp4") }
             .first
 
         guard let videoURL else {
-            NSLog("❌ video.mp4 no encontrado. Bundles probados:")
-            bundles.forEach { NSLog("   • \($0.bundlePath)") }
+            NSLog("❌ Video no encontrado. Bundles probados:")
+            bundlesToTry.forEach { NSLog("   • \($0.bundlePath)") }
             return
         }
 
-        let playerItem = AVPlayerItem(url: videoURL)
-        let player = AVPlayer(playerItem: playerItem)
+        let item = AVPlayerItem(url: videoURL)
+
+        let player = AVPlayer(playerItem: item)
         player.isMuted = true
         player.actionAtItemEnd = .none
 
-        // Loop infinito
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(restartVideo),
             name: .AVPlayerItemDidPlayToEndTime,
-            object: playerItem
+            object: item
         )
 
         let layer = AVPlayerLayer(player: player)
