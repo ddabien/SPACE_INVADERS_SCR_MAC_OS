@@ -20,3 +20,7 @@ by dr pendejoloco - 2026
 **Si esto no funciona, el problema es Gatekeeper **
 
 Autoriza la app: xattr -cr (spaceinvader*.scr) <- pegar desde la ubicación del archivo
+
+This is a fan-made, non-commercial screensaver inspired by the classic arcade game Space Invaders.
+Space Invaders is a trademark of TAITO Corporation.
+This project is not affiliated with or endorsed by TAITO.
