@@ -1,4 +1,4 @@
-# Space Invaders - Screensaver 
+# retro-invaders-screensaver 
 
 **SÚPER SIMPLE. SIN COMPLICACIONES.**
 
@@ -21,6 +21,6 @@ by dr pendejoloco - 2026
 
 Autoriza la app: xattr -cr (spaceinvader*.scr) <- pegar desde la ubicación del archivo
 
-This is a fan-made, non-commercial screensaver inspired by the classic arcade game Space Invaders.
+This is a fan-made, non-commercial screensaver inspired by the classic arcade game of 70's.
 Space Invaders is a trademark of TAITO Corporation.
 This project is not affiliated with or endorsed by TAITO.
