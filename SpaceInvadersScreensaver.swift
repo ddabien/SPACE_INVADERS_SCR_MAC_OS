@@ -3,18 +3,17 @@ import AVKit
 import AVFoundation
 
 final class SpaceInvadersScreensaverView: ScreenSaverView {
+
     private var player: AVPlayer?
     private var playerLayer: AVPlayerLayer?
 
     override init?(frame: NSRect, isPreview: Bool) {
         super.init(frame: frame, isPreview: isPreview)
-        wantsLayer = true  // ✅ PRIMERO que todo
         setupVideoPlayer()
     }
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
-        wantsLayer = true  // ✅ PRIMERO que todo
         setupVideoPlayer()
     }
 
@@ -29,12 +28,13 @@ final class SpaceInvadersScreensaverView: ScreenSaverView {
             .first
 
         guard let videoURL else {
-            NSLog("❌ Video no encontrado")
+            NSLog("❌ Video no encontrado. Bundles probados:")
             bundlesToTry.forEach { NSLog("   • \($0.bundlePath)") }
             return
         }
 
         let item = AVPlayerItem(url: videoURL)
+
         let player = AVPlayer(playerItem: item)
         player.isMuted = true
         player.actionAtItemEnd = .none
@@ -46,45 +46,44 @@ final class SpaceInvadersScreensaverView: ScreenSaverView {
             object: item
         )
 
-        let playerLayer = AVPlayerLayer(player: player)
-        playerLayer.videoGravity = .resizeAspectFill
-        playerLayer.frame = bounds
-        playerLayer.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
+        let layer = AVPlayerLayer(player: player)
+        layer.videoGravity = .resizeAspectFill
+        layer.frame = bounds
 
-        // ✅ Usar layer directamente, sin opcional
-        self.layer!.addSublayer(playerLayer)
+        // ✅ clave: que el layer se redimensione con el view
+        layer.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
+        layer.needsDisplayOnBoundsChange = true
+
+        wantsLayer = true
+        self.layer?.addSublayer(layer)
 
         self.player = player
-        self.playerLayer = playerLayer
+        self.playerLayer = layer
 
-        // ✅ Pequeño delay para que el layer esté listo antes de reproducir
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            self?.player?.play()
-        }
-    }
-
-    override func layout() {
-        super.layout()
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-        playerLayer?.frame = bounds
-        CATransaction.commit()
-    }
-
-    // ✅ Necesario para screensavers
-    override func startAnimation() {
-        super.startAnimation()
-        player?.play()
-    }
-
-    override func stopAnimation() {
-        super.stopAnimation()
-        player?.pause()
+        player.play()
     }
 
     @objc private func restartVideo() {
         player?.seek(to: .zero)
         player?.play()
+    }
+
+    // Tu método: lo dejamos, suma
+    override func resizeSubviews(withOldSize oldSize: NSSize) {
+        super.resizeSubviews(withOldSize: oldSize)
+        playerLayer?.frame = bounds
+    }
+
+    // ✅ más confiable en screensavers
+    override func layout() {
+        super.layout()
+        playerLayer?.frame = bounds
+    }
+
+    // ✅ cubre casos donde layout no dispara como esperás
+    override func setFrameSize(_ newSize: NSSize) {
+        super.setFrameSize(newSize)
+        playerLayer?.frame = bounds
     }
 
     deinit {
