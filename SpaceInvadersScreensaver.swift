@@ -8,11 +8,13 @@ final class SpaceInvadersScreensaverView: ScreenSaverView {
 
     override init?(frame: NSRect, isPreview: Bool) {
         super.init(frame: frame, isPreview: isPreview)
+        wantsLayer = true  // ✅ PRIMERO que todo
         setupVideoPlayer()
     }
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
+        wantsLayer = true  // ✅ PRIMERO que todo
         setupVideoPlayer()
     }
 
@@ -27,7 +29,7 @@ final class SpaceInvadersScreensaverView: ScreenSaverView {
             .first
 
         guard let videoURL else {
-            NSLog("❌ Video no encontrado. Bundles probados:")
+            NSLog("❌ Video no encontrado")
             bundlesToTry.forEach { NSLog("   • \($0.bundlePath)") }
             return
         }
@@ -44,31 +46,40 @@ final class SpaceInvadersScreensaverView: ScreenSaverView {
             object: item
         )
 
-        wantsLayer = true
-
         let playerLayer = AVPlayerLayer(player: player)
         playerLayer.videoGravity = .resizeAspectFill
-
-        // ✅ Autoresizing mask para que el layer siga el bounds automáticamente
-        playerLayer.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
         playerLayer.frame = bounds
+        playerLayer.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
 
-        self.layer?.addSublayer(playerLayer)
+        // ✅ Usar layer directamente, sin opcional
+        self.layer!.addSublayer(playerLayer)
 
         self.player = player
         self.playerLayer = playerLayer
 
-        player.play()
+        // ✅ Pequeño delay para que el layer esté listo antes de reproducir
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            self?.player?.play()
+        }
     }
 
-    // ✅ layout() se llama siempre que el view cambia de tamaño (más confiable que resizeSubviews)
     override func layout() {
         super.layout()
-        // Desactivar animación implícita para evitar el efecto "lag" al redimensionar
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         playerLayer?.frame = bounds
         CATransaction.commit()
+    }
+
+    // ✅ Necesario para screensavers
+    override func startAnimation() {
+        super.startAnimation()
+        player?.play()
+    }
+
+    override func stopAnimation() {
+        super.stopAnimation()
+        player?.pause()
     }
 
     @objc private func restartVideo() {
