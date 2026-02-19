@@ -18,6 +18,7 @@ final class SpaceInvadersScreensaverView: ScreenSaverView {
     }
 
     private func setupVideoPlayer() {
+        // En un .saver, a veces el recurso no aparece en Bundle.main, por eso probamos varios.
         let bundlesToTry: [Bundle] = [
             Bundle(for: type(of: self)),
             Bundle.main
@@ -47,12 +48,8 @@ final class SpaceInvadersScreensaverView: ScreenSaverView {
         )
 
         let layer = AVPlayerLayer(player: player)
-        layer.videoGravity = .resizeAspectFill
         layer.frame = bounds
-
-        // ✅ clave: que el layer se redimensione con el view
-        layer.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
-        layer.needsDisplayOnBoundsChange = true
+        layer.videoGravity = .resizeAspectFill
 
         wantsLayer = true
         self.layer?.addSublayer(layer)
@@ -68,21 +65,8 @@ final class SpaceInvadersScreensaverView: ScreenSaverView {
         player?.play()
     }
 
-    // Tu método: lo dejamos, suma
     override func resizeSubviews(withOldSize oldSize: NSSize) {
         super.resizeSubviews(withOldSize: oldSize)
-        playerLayer?.frame = bounds
-    }
-
-    // ✅ más confiable en screensavers
-    override func layout() {
-        super.layout()
-        playerLayer?.frame = bounds
-    }
-
-    // ✅ cubre casos donde layout no dispara como esperás
-    override func setFrameSize(_ newSize: NSSize) {
-        super.setFrameSize(newSize)
         playerLayer?.frame = bounds
     }
 
