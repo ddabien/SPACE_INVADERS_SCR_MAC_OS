@@ -3,7 +3,6 @@ import AVKit
 import AVFoundation
 
 final class SpaceInvadersScreensaverView: ScreenSaverView {
-
     private var player: AVPlayer?
     private var playerLayer: AVPlayerLayer?
 
@@ -18,7 +17,6 @@ final class SpaceInvadersScreensaverView: ScreenSaverView {
     }
 
     private func setupVideoPlayer() {
-        // En un .saver, a veces el recurso no aparece en Bundle.main, por eso probamos varios.
         let bundlesToTry: [Bundle] = [
             Bundle(for: type(of: self)),
             Bundle.main
@@ -35,7 +33,6 @@ final class SpaceInvadersScreensaverView: ScreenSaverView {
         }
 
         let item = AVPlayerItem(url: videoURL)
-
         let player = AVPlayer(playerItem: item)
         player.isMuted = true
         player.actionAtItemEnd = .none
@@ -47,27 +44,36 @@ final class SpaceInvadersScreensaverView: ScreenSaverView {
             object: item
         )
 
-        let layer = AVPlayerLayer(player: player)
-        layer.frame = bounds
-        layer.videoGravity = .resizeAspectFill
-
         wantsLayer = true
-        self.layer?.addSublayer(layer)
+
+        let playerLayer = AVPlayerLayer(player: player)
+        playerLayer.videoGravity = .resizeAspectFill
+
+        // ✅ Autoresizing mask para que el layer siga el bounds automáticamente
+        playerLayer.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
+        playerLayer.frame = bounds
+
+        self.layer?.addSublayer(playerLayer)
 
         self.player = player
-        self.playerLayer = layer
+        self.playerLayer = playerLayer
 
         player.play()
+    }
+
+    // ✅ layout() se llama siempre que el view cambia de tamaño (más confiable que resizeSubviews)
+    override func layout() {
+        super.layout()
+        // Desactivar animación implícita para evitar el efecto "lag" al redimensionar
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        playerLayer?.frame = bounds
+        CATransaction.commit()
     }
 
     @objc private func restartVideo() {
         player?.seek(to: .zero)
         player?.play()
-    }
-
-    override func resizeSubviews(withOldSize oldSize: NSSize) {
-        super.resizeSubviews(withOldSize: oldSize)
-        playerLayer?.frame = bounds
     }
 
     deinit {
